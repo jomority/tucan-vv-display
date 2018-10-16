@@ -8,23 +8,29 @@
 <body>
 <h1 class="title">Vorlesungsverzeichnis</h1>
 <div class="container">
-    <div id="drop-area">
-        <form class="my-form">
-            <p>Ziehe die <code>modules.json</code> in den gestrichelten Bereich.</p>
-            <input type="file" class="hidden" id="file-input" accept="application/json">
-            <label class="button" for="file-input">Datei auswählen</label>
-        </form>
-    </div>
+    <form id="drop-area">
+        <p>Ziehe die <code>modules.json</code> in den gestrichelten Bereich.</p>
+        <input type="file" class="hidden" id="file-input" accept="application/json">
+        <label class="button" for="file-input">Datei auswählen</label>
+    </form>
     <div id="file-info" class="hidden">
         <span></span>
         <span></span>
         <button class="button">X</button>
     </div>
 </div>
+<div class="flex">
+    <section class="container hidden" id="module-hierarchy">
+        <ul class="main-list">
+        </ul>
+    </section>
 
-<div class="container hidden">
-    <ul id="list" class="main-list">
-    </ul>
+    <section class="container hidden" id="module-single">
+        <h2></h2>
+        <div class="details">
+
+        </div>
+    </section>
 </div>
 
 <footer>
@@ -37,12 +43,6 @@
         <ul class="children">
         </ul>
     </li>
-</template>
-<template id="details">
-    <aside class="details">
-        <h2></h2>
-        <section></section>
-    </aside>
 </template>
 
 <script src="js/app.js"></script>
