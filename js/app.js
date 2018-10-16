@@ -16,11 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
         dropArea.addEventListener(eventName, unhighlight, false)
     });
 
-    function highlight(e) {
+    function highlight() {
         dropArea.classList.add("highlight")
     }
 
-    function unhighlight(e) {
+    function unhighlight() {
         dropArea.classList.remove("highlight")
     }
 
@@ -37,7 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function handleFiles(files) {
-    console.debug(files);
     if (files.length === 0) {
         return;
     }
@@ -49,72 +48,131 @@ function handleFiles(files) {
 
     const fileInfo = document.getElementById("file-info");
     const fileInfoSpans = fileInfo.querySelectorAll("span");
-    fileInfoSpans[0].appendChild(document.createTextNode(fileName));
-    fileInfoSpans[1].appendChild(document.createTextNode(fileSize));
+    const fileInfoButton = fileInfo.querySelector("button");
+
+    fileInfoSpans[0].textContent = fileName;
+    fileInfoSpans[1].textContent = fileSize;
     fileInfo.classList.remove("hidden");
-    document.getElementById("drop-area").classList.add("hidden");
+
+    const dropArea = document.getElementById("drop-area");
+    dropArea.classList.add("hidden");
+
+    fileInfoButton.addEventListener("click", () => {
+        fileInfo.classList.add("hidden");
+        dropArea.reset();
+        dropArea.classList.remove("hidden");
+        document.getElementById("module-hierarchy").classList.add("hidden");
+        document.getElementById("module-single").classList.add("hidden");
+    });
 
     const reader = new FileReader();
 
-    // reader.addEventListener("loadend", e => console.debug(e));
-
     reader.onload = function(event) {
         const fileContent = event.target.result;
-        const moduleHierachy = JSON.parse(fileContent);
+        const moduleHierachyRaw = JSON.parse(fileContent);
+        const moduleHierachy = process(moduleHierachyRaw);
+        console.debug(moduleHierachy);
         display(moduleHierachy);
     };
 
     reader.readAsText(file);
 }
 
+class HierachyItem {
+    constructor(title, children = []) {
+        this.title = title;
+        this.children = children;
+    }
+}
+
+class Module {
+    constructor(title, tucanNumber, semester, cp, details = []) {
+        this.title = title;
+        this.details = details;
+        this.cp = cp;
+        this.tucanNumber = tucanNumber;
+        this.semester = semester;
+    }
+}
+
+function process(moduleHierachy) {
+
+    //noinspection JSUnusedLocalSymbols
+    const processRec = (node, parent = null) => {
+        if (node.hasOwnProperty("title") && node.hasOwnProperty("children")) {
+            // Check if it is a Module (a leaf node)
+            if (node.hasOwnProperty("details") && node.children.length === 0) {
+                let cp = parseInt(node.details.filter(item => item.title === "Credits")[0].details.replace(/^(\d+).*/, "$1"));
+                if (isNaN(cp)) {
+                    cp = 0;
+                }
+
+                const titleMatched = node.title.match(/(\d\d-\w\w-\d{4}) (.+) \(((Wi|So)Se \d\d\d\d\/\d\d)\)/);
+
+                return new Module(titleMatched[2], titleMatched[1], titleMatched[3], cp, node.details);
+            } else if (node.children.length > 0) {
+                // Check for nested nodes with the same title as TUCaN produces them often
+                //if (parent !== null && node.title === parent.title) {
+                //    parent.children = parent.children.concat(node.children.map(item => processRec(item, parent))).filter(item => item !== null);
+                //} else {
+                let nodeProcessed = new HierachyItem(node.title);
+                nodeProcessed.children = nodeProcessed.children.concat(node.children.map(item => processRec(item, nodeProcessed))).filter(item => item !== null);
+                return nodeProcessed;
+                //}
+            }
+        }
+
+        return null;
+    };
+
+    return moduleHierachy.map(processRec).filter(item => item !== null);
+}
+
 
 function display(moduleHierachy) {
-    console.debug(moduleHierachy);
-    const list = document.getElementById("list");
+    const containerElem = document.getElementById("module-hierarchy");
+    const listElem = containerElem.querySelector(":scope > ul");
     const listItemTemplate = document.getElementById("list-item");
-    const detailsTemplate = document.getElementById("details");
 
-    const createRecursiveLists = (item, parent) => {
-        const itemNode = document.importNode(listItemTemplate.content, true); // clone template node
-        const li = itemNode.querySelector("li");
-        const ul = li.querySelector(".children");
+    const createRecursiveLists = (node, parent) => {
+        const templateClone = document.importNode(listItemTemplate.content, true); // clone template node
+        const itemElem = templateClone.querySelector("li");
+        const childrenElem = itemElem.querySelector(".children");
 
-        const title = li.querySelector(".list-title");
-        title.appendChild(document.createTextNode(item.title));
+        const title = itemElem.querySelector(".list-title");
+        title.appendChild(document.createTextNode(node.title));
 
-        if (item.hasOwnProperty("children") && item.children.length === 0) {
-            let cp = parseInt(item.details.filter(item => item.title === "Credits")[0].details.replace(/^(\d+).*/, "$1"));
-            if (isNaN(cp)) {
-                cp = 0;
-            }
+        if (node instanceof Module) {
             const badge = document.createElement("span");
             badge.classList.add("badge");
-            badge.appendChild(document.createTextNode(`${cp} CP`));
+            badge.appendChild(document.createTextNode(`${node.cp} CP`));
             title.appendChild(badge);
+
+            itemElem.removeChild(childrenElem);
 
             title.addEventListener("click", e => {
                 preventDefaults(e);
-                const detailsNode = document.importNode(detailsTemplate.content, true);
+                const detailsNode = document.getElementById("module-single");
                 const detailsTitle = detailsNode.querySelector("h2");
+                detailsTitle.textContent = `${node.tucanNumber} ${node.title} ${node.semester}`;
 
-                ul.classList.toggle("hidden");
+                detailsNode.classList.toggle("hidden");
             });
         } else {
             title.addEventListener("click", e => {
                 preventDefaults(e);
-                ul.classList.toggle("hidden");
+                childrenElem.classList.toggle("hidden");
             });
 
-            for (const child of item.children) {
-                createRecursiveLists(child, ul);
-            }
+            node.children.forEach(child => createRecursiveLists(child, childrenElem));
         }
-        parent.appendChild(itemNode);
+
+        parent.appendChild(templateClone);
     };
 
-    for (let module of moduleHierachy) {
-        createRecursiveLists(module, list);
-    }
+    moduleHierachy.forEach(child => createRecursiveLists(child, listElem));
+
+    containerElem.classList.remove("hidden");
 }
 
 /**
@@ -122,11 +180,9 @@ function display(moduleHierachy) {
  */
 function generateSizeString(byteSize) {
     let res = byteSize + " bytes";
-    // optional code for multiples approximation
     for (let multiples = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"], multiple = 0, approx = byteSize / 1024; approx > 1; approx /= 1024, multiple++) {
-        res = approx.toFixed(3) + " " + multiples[multiple] + " (" + byteSize + " bytes)";
+        res = `${approx.toFixed(3)} ${multiples[multiple]}`;
     }
-
     return res;
 }
 
