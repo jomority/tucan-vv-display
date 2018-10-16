@@ -1,3 +1,5 @@
+let currentSingleModule;
+
 document.addEventListener("DOMContentLoaded", () => {
     // Thanks to https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 
@@ -71,7 +73,6 @@ function handleFiles(files) {
         const fileContent = event.target.result;
         const moduleHierachyRaw = JSON.parse(fileContent);
         const moduleHierachy = process(moduleHierachyRaw);
-        console.debug(moduleHierachy);
         display(moduleHierachy);
     };
 
@@ -97,8 +98,7 @@ class Module {
 
 function process(moduleHierachy) {
 
-    //noinspection JSUnusedLocalSymbols
-    const processRec = (node, parent = null) => {
+    const processRec = (node) => {
         if (node.hasOwnProperty("title") && node.hasOwnProperty("children")) {
             // Check if it is a Module (a leaf node)
             if (node.hasOwnProperty("details") && node.children.length === 0) {
@@ -111,15 +111,15 @@ function process(moduleHierachy) {
 
                 return new Module(titleMatched[2], titleMatched[1], titleMatched[3], cp, node.details);
             } else if (node.children.length > 0) {
-                // Check for nested nodes with the same title as TUCaN produces them often
                 let nodeProcessed = new HierachyItem(node.title);
 
                 let children;
 
+                // Check for nested nodes with the same title as TUCaN produces them often
                 if (node.children.length === 1 && node.children[0].title === node.title) {
-                    children = node.children[0].children.map(item => processRec(item, nodeProcessed));
+                    children = node.children[0].children.map(processRec);
                 } else {
-                    children = node.children.map(item => processRec(item, nodeProcessed));
+                    children = node.children.map(processRec);
                 }
 
                 nodeProcessed.children = nodeProcessed.children.concat(children.filter(item => item !== null));
@@ -158,19 +158,30 @@ function display(moduleHierachy) {
             title.addEventListener("click", e => {
                 preventDefaults(e);
                 const singleElem = document.getElementById("module-single");
-                const singleTitleElem = singleElem.querySelector("h2");
-                const singleDetailsElem = singleElem.querySelector(".details");
-                singleTitleElem.textContent = `${node.tucanNumber} ${node.title} ${node.semester}`;
 
-                for (let detail of node.details) {
-                    const titleElem = document.createElement("h3");
-                    titleElem.textContent = detail.title;
-                    const detailElems = htmlToElements(detail.details);
-                    singleDetailsElem.appendChild(titleElem);
-                    detailElems.forEach(e => singleDetailsElem.appendChild(e));
+                if (node === currentSingleModule) {
+                    singleElem.classList.toggle("hidden");
+                } else {
+                    const singleTitleElem = singleElem.querySelector("h2");
+                    const singleDetailsElem = singleElem.querySelector(".details");
+                    singleTitleElem.textContent = `${node.tucanNumber} ${node.title} ${node.semester}`;
+
+                    // Clear detail child nodes
+                    while (singleDetailsElem.firstChild) {
+                        singleDetailsElem.removeChild(singleDetailsElem.firstChild);
+                    }
+
+                    for (let detail of node.details) {
+                        const titleElem = document.createElement("h3");
+                        titleElem.textContent = detail.title;
+                        const detailElems = htmlToElements(detail.details);
+                        singleDetailsElem.appendChild(titleElem);
+                        detailElems.forEach(e => singleDetailsElem.appendChild(e));
+                    }
+
+                    singleElem.classList.remove("hidden");
+                    currentSingleModule = node;
                 }
-
-                singleElem.classList.toggle("hidden");
             });
         } else {
             title.addEventListener("click", e => {
