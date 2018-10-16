@@ -1,0 +1,20 @@
+# Created by .ignore support plugin (hsz.mobi)
+Thumbs.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+.idea
+*.iml
+*.iws
+data

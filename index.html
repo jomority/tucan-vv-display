@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Vorlesungsverzeichnis</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<h1 class="title">Vorlesungsverzeichnis</h1>
+<div class="container">
+    <div id="drop-area">
+        <form class="my-form">
+            <p>Ziehe die <code>modules.json</code> in den gestrichelten Bereich.</p>
+            <input type="file" class="hidden" id="file-input" accept="application/json">
+            <label class="button" for="file-input">Datei auswählen</label>
+        </form>
+    </div>
+    <div id="file-info" class="hidden">
+        <span></span>
+        <span></span>
+        <button class="button">X</button>
+    </div>
+</div>
+
+<div class="container hidden">
+    <ul id="list" class="main-list">
+    </ul>
+</div>
+
+<footer>
+    Gemacht von <a href="https://github.com/twwd" target="_blank">twwd</a>
+</footer>
+
+<template id="list-item">
+    <li>
+        <a href="#" class="list-title"></a>
+        <ul class="children">
+        </ul>
+    </li>
+</template>
+<template id="details">
+    <aside class="details">
+        <h2></h2>
+        <section></section>
+    </aside>
+</template>
+
+<script src="js/app.js"></script>
+</body>
+</html>
