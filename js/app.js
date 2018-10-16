@@ -112,13 +112,18 @@ function process(moduleHierachy) {
                 return new Module(titleMatched[2], titleMatched[1], titleMatched[3], cp, node.details);
             } else if (node.children.length > 0) {
                 // Check for nested nodes with the same title as TUCaN produces them often
-                //if (parent !== null && node.title === parent.title) {
-                //    parent.children = parent.children.concat(node.children.map(item => processRec(item, parent))).filter(item => item !== null);
-                //} else {
                 let nodeProcessed = new HierachyItem(node.title);
-                nodeProcessed.children = nodeProcessed.children.concat(node.children.map(item => processRec(item, nodeProcessed))).filter(item => item !== null);
+
+                let children;
+
+                if (node.children.length === 1 && node.children[0].title === node.title) {
+                    children = node.children[0].children.map(item => processRec(item, nodeProcessed));
+                } else {
+                    children = node.children.map(item => processRec(item, nodeProcessed));
+                }
+
+                nodeProcessed.children = nodeProcessed.children.concat(children.filter(item => item !== null));
                 return nodeProcessed;
-                //}
             }
         }
 
