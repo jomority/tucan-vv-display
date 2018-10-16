@@ -152,11 +152,20 @@ function display(moduleHierachy) {
 
             title.addEventListener("click", e => {
                 preventDefaults(e);
-                const detailsNode = document.getElementById("module-single");
-                const detailsTitle = detailsNode.querySelector("h2");
-                detailsTitle.textContent = `${node.tucanNumber} ${node.title} ${node.semester}`;
+                const singleElem = document.getElementById("module-single");
+                const singleTitleElem = singleElem.querySelector("h2");
+                const singleDetailsElem = singleElem.querySelector(".details");
+                singleTitleElem.textContent = `${node.tucanNumber} ${node.title} ${node.semester}`;
 
-                detailsNode.classList.toggle("hidden");
+                for (let detail of node.details) {
+                    const titleElem = document.createElement("h3");
+                    titleElem.textContent = detail.title;
+                    const detailElems = htmlToElements(detail.details);
+                    singleDetailsElem.appendChild(titleElem);
+                    detailElems.forEach(e => singleDetailsElem.appendChild(e));
+                }
+
+                singleElem.classList.toggle("hidden");
             });
         } else {
             title.addEventListener("click", e => {
@@ -176,7 +185,19 @@ function display(moduleHierachy) {
 }
 
 /**
- * Lent from https://developer.mozilla.org/de/docs/Web/API/File/Zugriff_auf_Dateien_von_Webapplikationen#Beispiel_Dateigr%C3%B6%C3%9Fe_anzeigen
+ * Borrowed from https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro/35385518#35385518
+ *
+ * @param html the HTML
+ * @returns {NodeListOf<Node & ChildNode>}
+ */
+function htmlToElements(html) {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    return template.content.childNodes;
+}
+
+/**
+ * Borrowed from https://developer.mozilla.org/de/docs/Web/API/File/Zugriff_auf_Dateien_von_Webapplikationen#Beispiel_Dateigr%C3%B6%C3%9Fe_anzeigen
  */
 function generateSizeString(byteSize) {
     let res = byteSize + " bytes";
