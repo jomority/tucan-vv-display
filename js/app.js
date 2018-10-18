@@ -3,39 +3,64 @@ let currentSingleModule;
 document.addEventListener("DOMContentLoaded", () => {
     // Thanks to https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 
-    const dropArea = document.getElementById("drop-area");
-    const fileInput = document.getElementById("file-input");
+    const dropArea = document.getElementById("file-form");
 
     ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
-        dropArea.addEventListener(eventName, preventDefaults, false)
+        dropArea.addEventListener(eventName, preventDefaults, false);
     });
 
+    // Debounce the highlighting
+    const wait = 100;
+    const highlight = {
+        toHighlight: true,
+        yes() {
+            if (typeof this.timeout !== "number" || !this.toHighlight) {
+                if (!this.toHighlight) {
+                    window.clearTimeout(this.timeout);
+                }
+                this.timeout = window.setTimeout(() => dropArea.classList.add("drop-highlight"), wait);
+            }
+            this.toHighlight = true;
+        },
+        no() {
+            if (typeof this.timeout !== "number" || this.toHighlight) {
+                if (this.toHighlight) {
+                    window.clearTimeout(this.timeout);
+                }
+                this.timeout = window.setTimeout(() => dropArea.classList.remove("drop-highlight"), wait);
+            }
+            this.toHighlight = false;
+        }
+    };
+
     ["dragenter", "dragover"].forEach(eventName => {
-        dropArea.addEventListener(eventName, highlight, false)
+        dropArea.addEventListener(eventName, highlight.yes, false);
     });
 
     ["dragleave", "drop"].forEach(eventName => {
-        dropArea.addEventListener(eventName, unhighlight, false)
+        dropArea.addEventListener(eventName, highlight.no, false);
     });
 
-    function highlight() {
-        dropArea.classList.add("highlight")
-    }
+    dropArea.addEventListener(
+        "drop",
+        e => {
+            // Retrieve the FileList from the event
+            const dt = e.dataTransfer;
+            handleFiles(dt.files);
+        },
+        false
+    );
 
-    function unhighlight() {
-        dropArea.classList.remove("highlight")
-    }
+    const fileInput = document.getElementById("file-input");
 
-    dropArea.addEventListener("drop", function(e) {
-        // Retrieve the FileList from the event
-        const dt = e.dataTransfer;
-        handleFiles(dt.files);
-    }, false);
-
-    fileInput.addEventListener("change", function() {
-        // Get the FileList out of the input
-        handleFiles(this.files);
-    }, false);
+    fileInput.addEventListener(
+        "change",
+        function() {
+            // Get the FileList out of the input
+            handleFiles(this.files);
+        },
+        false
+    );
 });
 
 function handleFiles(files) {
@@ -48,23 +73,16 @@ function handleFiles(files) {
     const fileSize = generateSizeString(file.size);
     const fileName = file.name;
 
-    const fileInfo = document.getElementById("file-info");
-    const fileInfoSpans = fileInfo.querySelectorAll("span");
-    const fileInfoButton = fileInfo.querySelector("button");
+    const fileInfoName = document.getElementById("file-info-name");
+    const fileInfoSize = document.getElementById("file-info-size");
+    const fileInfoButton = document.getElementById("file-remove");
 
-    fileInfoSpans[0].textContent = fileName;
-    fileInfoSpans[1].textContent = fileSize;
-    fileInfo.classList.remove("hidden");
-
-    const dropArea = document.getElementById("drop-area");
-    dropArea.classList.add("hidden");
+    fileInfoName.textContent = fileName;
+    fileInfoSize.textContent = fileSize;
 
     fileInfoButton.addEventListener("click", () => {
-        fileInfo.classList.add("hidden");
-        dropArea.reset();
-        dropArea.classList.remove("hidden");
-        document.getElementById("module-hierarchy").classList.add("hidden");
-        document.getElementById("module-single").classList.add("hidden");
+        document.getElementById("file-form").reset();
+        modifyViewState(false);
     });
 
     const reader = new FileReader();
@@ -73,7 +91,7 @@ function handleFiles(files) {
         const fileContent = event.target.result;
         const moduleHierachyRaw = JSON.parse(fileContent);
         const moduleHierachy = process(moduleHierachyRaw);
-        display(moduleHierachy);
+        view(moduleHierachy);
     };
 
     reader.readAsText(file);
@@ -97,8 +115,7 @@ class Module {
 }
 
 function process(moduleHierachy) {
-
-    const processRec = (node) => {
+    const processRec = node => {
         if (node.hasOwnProperty("title") && node.hasOwnProperty("children")) {
             // Check if it is a Module (a leaf node)
             if (node.hasOwnProperty("details") && node.children.length === 0) {
@@ -133,8 +150,7 @@ function process(moduleHierachy) {
     return moduleHierachy.map(processRec).filter(item => item !== null);
 }
 
-
-function display(moduleHierachy) {
+function view(moduleHierachy) {
     const containerElem = document.getElementById("module-hierarchy");
     const listElem = containerElem.querySelector(":scope > ul");
     const listItemTemplate = document.getElementById("list-item");
@@ -159,8 +175,20 @@ function display(moduleHierachy) {
                 preventDefaults(e);
                 const singleElem = document.getElementById("module-single");
 
+                const toggleSingleElem = (show = true) => {
+                    if (show) {
+                        singleElem.classList.remove("hide");
+                        // Only scroll to single view if it is below the hierachy list
+                        if (!window.matchMedia("(min-width: 62.5rem)").matches) {
+                            singleElem.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                    } else {
+                        singleElem.classList.add("hide");
+                    }
+                };
+
                 if (node === currentSingleModule) {
-                    singleElem.classList.toggle("hidden");
+                    toggleSingleElem(singleElem.classList.contains("hide"));
                 } else {
                     const singleTitleElem = singleElem.querySelector("h2");
                     const singleDetailsElem = singleElem.querySelector(".details");
@@ -179,14 +207,14 @@ function display(moduleHierachy) {
                         detailElems.forEach(e => singleDetailsElem.appendChild(e));
                     }
 
-                    singleElem.classList.remove("hidden");
+                    toggleSingleElem();
                     currentSingleModule = node;
                 }
             });
         } else {
             title.addEventListener("click", e => {
                 preventDefaults(e);
-                childrenElem.classList.toggle("hidden");
+                childrenElem.classList.toggle("hide");
             });
 
             node.children.forEach(child => createRecursiveLists(child, childrenElem));
@@ -197,7 +225,22 @@ function display(moduleHierachy) {
 
     moduleHierachy.forEach(child => createRecursiveLists(child, listElem));
 
-    containerElem.classList.remove("hidden");
+    document.querySelectorAll(".init-hide").forEach(item => item.classList.remove("init-hide"));
+
+    modifyViewState(true);
+}
+
+function modifyViewState(fileLoaded = false) {
+    const elementsFileNotLoaded = document.querySelectorAll(".site-intro, .site-info");
+    const elementsFileLoaded = document.querySelectorAll("#file-info, .site-content" + (!fileLoaded ? ", #module-single" : "")); // the single part should initially remain hidden unless a module is clicked
+
+    if (fileLoaded) {
+        elementsFileNotLoaded.forEach(elem => elem.classList.add("hide"));
+        elementsFileLoaded.forEach(elem => elem.classList.remove("hide"));
+    } else {
+        elementsFileLoaded.forEach(elem => elem.classList.add("hide"));
+        elementsFileNotLoaded.forEach(elem => elem.classList.remove("hide"));
+    }
 }
 
 /**
@@ -217,7 +260,11 @@ function htmlToElements(html) {
  */
 function generateSizeString(byteSize) {
     let res = byteSize + " bytes";
-    for (let multiples = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"], multiple = 0, approx = byteSize / 1024; approx > 1; approx /= 1024, multiple++) {
+    for (
+        let multiples = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"], multiple = 0, approx = byteSize / 1024;
+        approx > 1;
+        approx /= 1024, multiple++
+    ) {
         res = `${approx.toFixed(3)} ${multiples[multiple]}`;
     }
     return res;

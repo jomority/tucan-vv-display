@@ -8,35 +8,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<h1 class="title">Vorlesungsverzeichnis</h1>
-<div class="container">
-    <form id="drop-area">
-        <p>Ziehe die <code>modules.json</code> in den gestrichelten Bereich.</p>
-        <input type="file" class="hidden" id="file-input" accept="application/json">
-        <label class="button" for="file-input">Datei auswählen</label>
-    </form>
-    <div id="file-info" class="hidden">
-        <span></span>
-        <span></span>
-        <button class="button">X</button>
+<header class="site-header">
+    <h1 class="site-title">Vorlesungs&shy;verzeichnis</h1>
+    <div id="file-info" class="hide init-hide">
+        <code id="file-info-name"></code>
+        <small id="file-info-size"></small>
+        <button id="file-remove" class="button icon--close"><span class="sr-only">Mit neuer Datei beginnen</span></button>
+    </div>
+</header>
+
+<div class="site-main">
+    <section class="site-intro">
+        <h3 class="site-subtitle narrow">Das Vorlesungs&shy;verzeichnis<br>wie es sein sollte</h3>
+        <form class="narrow" id="file-form">
+            <p>Ziehe die <code>modules.json</code> in den gestrichelten Bereich oder wähle sie aus.</p>
+            <input type="file" hidden id="file-input" accept="application/json">
+            <label class="button" for="file-input">Datei auswählen</label>
+        </form>
+    </section>
+    <section class="site-info box">
+        <h3>Wie funktioniert`s?</h3>
+        <hr>
+        <p class="narrow">
+            Diese Website zeigt dir dein persönliches Vorlesungsverzeichnis (wie zu finden unter <em>Veranstaltungen/Anmeldungen</em>) übersichtlicher an,
+            als TUCaN es tut. Die benötigte <code>modules.json</code> kannst du dir mithilfe des Skripts <code>vv_exporter.py</code> aus den <a
+                href="https://github.com/tucanlib/tucan-tools#vorlesungsverzeichnis-exporter" target="_blank">TUCaN-Tools</a> generieren.
+        </p>
+    </section>
+    <div class="site-content init-hide">
+        <section class="box hide" id="module-hierarchy">
+            <ul class="hierarchy-list">
+            </ul>
+        </section>
+
+        <section class="box hide" id="module-single">
+            <h2></h2>
+            <div class="details">
+
+            </div>
+        </section>
     </div>
 </div>
-<div class="flex">
-    <section class="container hidden" id="module-hierarchy">
-        <ul class="main-list">
-        </ul>
-    </section>
-
-    <section class="container hidden" id="module-single">
-        <h2></h2>
-        <div class="details">
-
-        </div>
-    </section>
-</div>
-
-<footer>
-    Gemacht von <a href="https://github.com/twwd" target="_blank">twwd</a>
+<footer class="site-footer">
+    Erstellt von <a href="https://github.com/twwd" target="_blank">twwd</a>
 </footer>
 
 <template id="list-item">
