@@ -202,9 +202,10 @@ function view(moduleHierachy) {
                     for (let detail of node.details) {
                         const titleElem = document.createElement("h3");
                         titleElem.textContent = detail.title;
-                        const detailElems = htmlToElements(detail.details);
+                        const detailElem = document.createElement("p");
+                        detailElem.innerHTML = detail.details;
                         singleDetailsElem.appendChild(titleElem);
-                        detailElems.forEach(e => singleDetailsElem.appendChild(e));
+                        singleDetailsElem.appendChild(detailElem);
                     }
 
                     toggleSingleElem();
@@ -241,18 +242,6 @@ function modifyViewState(fileLoaded = false) {
         elementsFileLoaded.forEach(elem => elem.classList.add("hide"));
         elementsFileNotLoaded.forEach(elem => elem.classList.remove("hide"));
     }
-}
-
-/**
- * Borrowed from https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro/35385518#35385518
- *
- * @param html the HTML
- * @returns {NodeListOf<Node & ChildNode>}
- */
-function htmlToElements(html) {
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    return template.content.childNodes;
 }
 
 /**
