@@ -124,7 +124,7 @@ function process(moduleHierachy) {
                     cp = 0;
                 }
 
-                const titleMatched = node.title.match(/(\d\d-\w\w-\d{4}) (.+) \(((Wi|So)Se \d\d\d\d\/\d\d)\)/);
+                const titleMatched = node.title.match(/(\d\d-\w\w-\w{4}(?:\/\w+)?) (.+) \(((?:Wi|So)Se \d\d\d\d(?:\/\d\d)?)\)/);
 
                 return new Module(titleMatched[2], titleMatched[1], titleMatched[3], cp, node.details);
             } else if (node.children.length > 0) {
